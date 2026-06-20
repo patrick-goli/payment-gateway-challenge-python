@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "FastAPI - Debug Payment Gateway",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "payment_gateway_api.app:app",
+                "--reload",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8090"
+            ],
+            "jinja": true,
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
