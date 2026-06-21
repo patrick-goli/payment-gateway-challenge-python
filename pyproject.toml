@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "payment-gateway-api"
-version = "0.1.0"
+version = "0.2.0"
 description = "Payment Gateway API"
 authors = ["Patrick Goli <31928919+patrick-goli@users.noreply.github.com>"]
 readme = "README.md"

@@ -1,0 +1,308 @@
+openapi: 3.1.0
+info:
+  title: Payment Gateway API
+  description: A simplified payment gateway that validates card payments, forwards valid requests to an acquiring bank simulator, stores non-sensitive payment data, and exposes retrieval endpoints for previously processed payments.
+  contact:
+    name: Patrick Goli
+    url: https://github.com/patrick-goli/payment-gateway-challenge-python
+  version: 0.2.0
+paths:
+  /:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the service health status.
+      operationId: health__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Health  Get
+  /api/v1/payments/{payment_id}:
+    get:
+      tags:
+        - Payments
+      summary: Retrieve a payment
+      description: Retrieve the non-sensitive details of a previously processed payment by its ID.
+      operationId: get_payment_api_v1_payments__payment_id__get
+      parameters:
+        - required: true
+          schema:
+            type: string
+            title: Payment Id
+          name: payment_id
+          in: path
+      responses:
+        '200':
+          description: Stored payment details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostPaymentResponse'
+        '404':
+          description: Payment not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: Not Found
+                message: Payment ID not found
+                timestamp: '2026-06-21T19:30:00Z'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/payments:
+    post:
+      tags:
+        - Payments
+      summary: Create a payment
+      description: Validate a card payment request, forward it to the acquiring bank simulator, and return the created payment resource.
+      operationId: create_payment_api_v1_payments_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostPaymentRequest'
+        required: true
+      responses:
+        '201':
+          description: Created payment.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostPaymentResponse'
+        '400':
+          description: Validation failed or malformed request body.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                validation:
+                  summary: Validation failure
+                  value:
+                    status: Rejected
+                    error: Bad Request
+                    message: Validation failed
+                    timestamp: '2026-06-21T19:30:00Z'
+                    validation_errors:
+                      card_number: Card number is invalid
+                      currency: 'Currency must be one of: USD, EUR, CAD'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+        '503':
+          description: Acquiring bank unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: Rejected
+                error: Service Unavailable
+                message: Acquiring bank is temporarily unavailable
+                timestamp: '2026-06-21T19:30:00Z'
+components:
+  schemas:
+    ErrorResponse:
+      properties:
+        status:
+          allOf:
+            - $ref: '#/components/schemas/PaymentStatus'
+          description: Domain-level payment status, usually Rejected for validation or upstream failures.
+          example: Rejected
+        error:
+          type: string
+          title: Error
+          description: HTTP reason phrase.
+          example: Bad Request
+        message:
+          type: string
+          title: Message
+          description: Human-readable error message.
+          example: Validation failed
+        timestamp:
+          type: string
+          format: date-time
+          title: Timestamp
+          description: UTC timestamp when the error was produced.
+          example: '2026-06-21T19:30:00Z'
+        validation_errors:
+          additionalProperties:
+            type: string
+          type: object
+          title: Validation Errors
+          description: Field-level validation messages when the request body is invalid.
+          example:
+            card_number: Card number is invalid
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      title: ErrorResponse
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    PaymentStatus:
+      type: string
+      enum:
+        - Authorized
+        - Declined
+        - Rejected
+      title: PaymentStatus
+      description: An enumeration.
+    PostPaymentRequest:
+      properties:
+        card_number:
+          type: string
+          pattern: ^\d{14,19}$
+          title: Card Number
+          description: Primary account number (PAN), 14 to 19 digits, validated with the Luhn algorithm.
+          example: '370762578002484'
+        expiry_month:
+          type: integer
+          maximum: 12
+          minimum: 1
+          title: Expiry Month
+          description: Card expiry month, between 1 and 12.
+          example: 12
+        expiry_year:
+          type: integer
+          maximum: 3099
+          minimum: 1970
+          title: Expiry Year
+          description: Card expiry year in YYYY format.
+          example: 2030
+        currency:
+          type: string
+          title: Currency
+          description: Three-letter ISO currency code. Supported values are configured at runtime.
+          example: USD
+        amount:
+          type: integer
+          minimum: 1
+          title: Amount
+          description: Payment amount in minor units. Must be a positive integer.
+          example: 100
+        cvv:
+          type: string
+          pattern: ^\d{3,4}$
+          title: Cvv
+          description: Card verification value, 3 or 4 digits.
+          example: '123'
+      type: object
+      required:
+        - card_number
+        - expiry_month
+        - expiry_year
+        - currency
+        - amount
+        - cvv
+      title: PostPaymentRequest
+      example:
+        card_number: '346989009877447'
+        expiry_month: 12
+        expiry_year: 2030
+        currency: USD
+        amount: 100
+        cvv: '123'
+    PostPaymentResponse:
+      properties:
+        id:
+          type: string
+          title: Id
+          description: Unique payment identifier.
+          example: 8c71cc81-c970-420a-930c-91a34e31a94b
+        status:
+          allOf:
+            - $ref: '#/components/schemas/PaymentStatus'
+          description: Payment outcome returned by the gateway.
+          example: Authorized
+        card_number_last_four:
+          type: string
+          title: Card Number Last Four
+          description: Last four digits of the card number.
+          example: '4242'
+        expiry_month:
+          type: integer
+          title: Expiry Month
+          description: Card expiry month.
+          example: 12
+        expiry_year:
+          type: integer
+          title: Expiry Year
+          description: Card expiry year.
+          example: 2030
+        currency:
+          type: string
+          title: Currency
+          description: Three-letter ISO currency code.
+          example: USD
+        amount:
+          type: integer
+          title: Amount
+          description: Payment amount in minor units.
+          example: 100
+      type: object
+      required:
+        - status
+        - card_number_last_four
+        - expiry_month
+        - expiry_year
+        - currency
+        - amount
+      title: PostPaymentResponse
+      example:
+        id: 9d3cc1ad-8db0-4ec0-8f5a-cf1b27763c0d
+        status: Authorized
+        card_number_last_four: '4242'
+        expiry_month: 12
+        expiry_year: 2030
+        currency: EUR
+        amount: 100
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+              - type: string
+              - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+        - loc
+        - msg
+        - type
+      title: ValidationError
+tags:
+  - name: Health
+    description: Service health and readiness endpoints.
+  - name: Payments
+    description: Create and retrieve card payments.

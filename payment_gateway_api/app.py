@@ -28,7 +28,7 @@ app = FastAPI(
         "requests to an acquiring bank simulator, stores non-sensitive payment data, "
         "and exposes retrieval endpoints for previously processed payments."
     ),
-    version="1.0.0",
+    version="0.2.0",
     contact={
         "name": "Patrick Goli",
         "url": "https://github.com/patrick-goli/payment-gateway-challenge-python",
@@ -60,6 +60,8 @@ logging.basicConfig(
     handlers=[handler, logging.StreamHandler()],
     format="%(asctime)s %(levelname)s %(name)s - %(message)s",
 )
+
+logger.info("RUNNING IN MODE : %s", settings.environment)
 
 
 @app.get(
@@ -210,39 +212,13 @@ async def bank_processing_exception_handler(
         error=HTTPStatus(exc.status_code).phrase,
         message=exc.message,
         timestamp=datetime.now(timezone.utc),
+        validation_errors=None,
     )
     return JSONResponse(
         status_code=exc.status_code,
         content=jsonable_encoder(error, exclude_none=True),
     )
 
-
-@app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    # Validation errors and explicit HTTPExceptions
-
-    logger.warning(
-        "http_exception method=%s path=%s status_code=%s detail=%s",
-        request.method,
-        request.url.path,
-        exc.status_code,
-        exc.detail,
-    )
-
-    status_code = exc.status_code
-    error = ErrorResponse(
-        status=PaymentStatus.REJECTED
-        if status_code == status.HTTP_400_BAD_REQUEST
-        else None,
-        error=HTTPStatus(status_code).phrase,
-        message=str(exc.detail), # TODO custom message
-        timestamp=datetime.now(timezone.utc),
-        validation_errors=None,
-    )
-    return JSONResponse(
-        status_code=status_code,
-        content=jsonable_encoder(error, exclude_none=True),
-    )
 
 @app.exception_handler(RequestValidationError)
 async def request_validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
@@ -277,5 +253,33 @@ async def request_validation_exception_handler(request: Request, exc: RequestVal
 
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder(error, exclude_none=True),
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    # Explicit HTTPExceptions
+
+    logger.warning(
+        "http_exception method=%s path=%s status_code=%s detail=%s",
+        request.method,
+        request.url.path,
+        exc.status_code,
+        exc.detail,
+    )
+
+    status_code = exc.status_code
+    error = ErrorResponse(
+        status=PaymentStatus.REJECTED
+        if status_code == status.HTTP_400_BAD_REQUEST
+        else None,
+        error=HTTPStatus(status_code).phrase,
+        message=str("An unexpected error occurred"),
+        timestamp=datetime.now(timezone.utc),
+        validation_errors=None,
+    )
+    return JSONResponse(
+        status_code=status_code,
         content=jsonable_encoder(error, exclude_none=True),
     )

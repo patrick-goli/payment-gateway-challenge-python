@@ -99,6 +99,7 @@ Validation is performed with Pydantic field constraints plus custom validators:
 - `amount`
 
 Sensitive values such as full PAN and CVV are never stored.
+TODO : Use SecretStr
 
 ### Error model
 
@@ -192,7 +193,7 @@ Both repositories are intentionally in-memory for challenge simplicity.
 
 ### `PaymentsRepository`
 
-- stores `PostPaymentResponse` in a Python dictionary keyed by string payment ID
+- stores `PostPaymentResponse` in a dictionary keyed by string payment ID
 - supports `add(...)` and `get(...)`
 
 
@@ -263,27 +264,16 @@ The application configures:
 - console logging
 - rotating file logging
 
-Current strengths:
-
-- logs are persisted to file
-- logs are available on stdout for containers
-
 Current limitations:
 
 - no correlation/request ID in logs
-- no structured JSON logging
 - no metrics or tracing
-- limited explicit logging in service and client layers compared with the Java version
-
-These are acceptable for the exercise but would be the first observability improvements in production.
 
 ---
 
 ## Testing Strategy
 
 The test suite currently combines API-level and service-level tests.
-
-Recommended test categories for this architecture:
 
 - **Service tests**
   - payment authorized/declined mapping
@@ -307,7 +297,5 @@ If this service were moved beyond challenge scope, the next improvements would b
 
 1. Replace in-memory repositories with persistent/shared storage.
 2. Add authentication and merchant scoping.
-3. Add structured logging, correlation IDs, metrics, and tracing.
+3. Add more logging, correlation IDs, metrics, and tracing.
 4. Harden upstream handling with retries, circuit breakers, and response contract validation.
-5. Expand tests, especially around repositories, HTTP client behavior, and error paths.
-6. Add OpenAPI metadata/examples directly on routes and models.
