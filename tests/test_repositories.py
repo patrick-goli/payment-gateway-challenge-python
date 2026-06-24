@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
 
-import pytest
-
 from payment_gateway_api.models.response import PostPaymentResponse
 from payment_gateway_api.repositories.payments_repository import PaymentsRepository
 from payment_gateway_api.status_enum import PaymentStatus
@@ -33,4 +31,3 @@ def test_payments_repository_returns_none_for_missing_payment():
     repository = PaymentsRepository()
 
     assert repository.get("missing") is None
-

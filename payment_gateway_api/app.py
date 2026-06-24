@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Dict
 from http import HTTPStatus
 
-from fastapi import FastAPI,  HTTPException, status, Request
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -17,8 +17,6 @@ from payment_gateway_api.dependencies import get_payment_gateway_service
 from payment_gateway_api.models.request import PostPaymentRequest
 from payment_gateway_api.models.response import PostPaymentResponse, ErrorResponse
 from payment_gateway_api.services.payment_gateway_service import PaymentGatewayService
-
-from fastapi import Depends, FastAPI, HTTPException, Request, status
 
 
 app = FastAPI(
@@ -73,7 +71,6 @@ logger.info("RUNNING IN MODE : %s", settings.environment)
 async def health() -> Dict[str, str]:
     logger.debug("health_check")
     return {"status": "UP"}
-
 
 
 @app.get(
@@ -198,7 +195,7 @@ async def create_payment(
 async def bank_processing_exception_handler(
     request: Request, exc: BankProcessingException
 ) -> JSONResponse:
-    
+
     logger.warning(
         "bank_processing_exception method=%s path=%s status_code=%s message=%s",
         request.method,
@@ -227,9 +224,9 @@ async def request_validation_exception_handler(request: Request, exc: RequestVal
         "request_validation_failed method=%s path=%s errors=%s",
         request.method,
         request.url.path,
-        exc.errors(),
+        exc.errors(),   # TODO should not contains sensitive info
     )
-    
+
     validation_errors: dict[str, str] = {}
 
     for err in exc.errors():

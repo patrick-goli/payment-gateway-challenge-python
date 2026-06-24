@@ -13,4 +13,3 @@ class BankProcessingException(Exception):
         self.message = message
         self.cause = cause
         super().__init__(message)
-

@@ -10,6 +10,7 @@ from payment_gateway_api.models.request import PostPaymentRequest
 
 logger = logging.getLogger(__name__)
 
+
 class BankRequest(BaseModel):
     card_number: str
     expiry_date: str
@@ -28,6 +29,7 @@ class BankResponse(BaseModel):
             return None
         return v
 
+
 class AcquiringBankService:
     def __init__(self, http_client: HttpClient) -> None:
         self._http_client = http_client
@@ -41,7 +43,7 @@ class AcquiringBankService:
             request.card_number_last_four(),
             self._settings.acquiring_bank_api,
         )
-        
+
         bank_request = BankRequest(
             card_number=request.card_number,
             expiry_date=f"{request.expiry_month:02d}/{request.expiry_year}",
@@ -59,5 +61,5 @@ class AcquiringBankService:
             response_json["authorized"],
             response_json["authorization_code"] is not None,
         )
-        
+
         return BankResponse(**response_json)

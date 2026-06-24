@@ -10,6 +10,7 @@ from payment_gateway_api.exceptions import BankProcessingException
 
 logger = logging.getLogger(__name__)
 
+
 class HttpClient:
     def __init__(self, timeout_seconds: float = 10.0) -> None:
         self._timeout = timeout_seconds

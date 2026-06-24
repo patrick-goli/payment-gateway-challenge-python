@@ -5,8 +5,8 @@ from typing import List
 
 class Settings:
     def __init__(self) -> None:
-        self.environment:str = os.getenv("APP_ENV", "local")
-        self .is_dev = self.environment in {"local", "dev"}
+        self.environment: str = os.getenv("APP_ENV", "local")
+        self.is_dev = self.environment in {"local", "dev"}
         self.server_port: int = int(os.getenv("SERVER_PORT", "8090"))
         self.acquiring_bank_api: str = os.getenv(
             "APP_ACQUIRING_BANK_API",

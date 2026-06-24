@@ -90,4 +90,3 @@ def test_process_payment_returns_declined_when_bank_declines():
     assert response.card_number_last_four == "4242"
     assert payments_repository.get(response.id) == response
     acquiring_bank_service.process_payment.assert_called_once_with(request)
-

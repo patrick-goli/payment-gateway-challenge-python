@@ -11,6 +11,7 @@ from payment_gateway_api.exceptions import PaymentNotFoundException
 
 logger = logging.getLogger(__name__)
 
+
 class PaymentGatewayService:
     def __init__(
         self,
@@ -68,4 +69,3 @@ class PaymentGatewayService:
         )
 
         return response
-    

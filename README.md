@@ -28,6 +28,19 @@ The service exposes OpenAPI API documentation described in `payment-gateway-open
 - `GET /api/v1/payments/{id}`
   - returns stored payment details
 
+Shopper             Merchant                 Gateway               Bank Simulator
+   │                    │                        │                         │
+   │─── Initiate ──────>│                        │                         │
+   │                    │─── POST /payments ────>│                         │
+   │                    │    (Schema Validation) │                         │
+   │                    │                        │─── POST /payments ─────>│
+   │                    │                        │    (Async HTTP Client)  │
+   │                    │                        │                         │
+   │                    │                        │<── [200 OK Authorized] ─│
+   │                    │<── [210 Created] ──────│                         │
+   │                    │    (Masked Response)   │                         │
+
+
 ### Data and Security
 
 - Only **non-sensitive** data is stored and returned.
@@ -208,3 +221,4 @@ poetry run pytest
 - Single acquiring bank: the integration layer targets one bank simulator. Extending this to multiple providers would involve introducing an abstraction for bank connectors and routing/selection logic.
 - Correlation ID for full request traceability
 - No metrics/traces: only logging is implemented. Metrics (e.g. authorized/declined/rejected counts, bank latency) and distributed tracing would be the next step for full observability.
+- Pagination and filtering: Add `GET /payments?merchant_id=&status=` with pagination
